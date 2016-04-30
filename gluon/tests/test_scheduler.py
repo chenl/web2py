@@ -326,29 +326,31 @@ def demo8():
         info = s.task_status(failed.id)
         task_runs = self.db(self.db.scheduler_run.task_id == info.id).select()
         res = [
-            ("task status failed", info.status == 'FAILED'),
-            ("task times_run is 0", info.times_run == 0),
-            ("task times_failed is 2", info.times_failed == 2),
-            ("task ran 2 times only", len(task_runs) == 2),
-            ("scheduler_run records are FAILED", (task_runs[0].status == task_runs[1].status == 'FAILED')),
-            ("period is respected", (task_runs[1].start_time > task_runs[0].start_time + datetime.timedelta(seconds=info.period)))
+            ("task status", 'FAILED', info.status),
+            ("task times_run", 0, info.times_run),
+            ("task times_failed", 2, info.times_failed),
+            ("task ran times", 2, len(task_runs)),
+            ("scheduler_run records are FAILED", 2, sum(1 for run in task_runs if run.status == 'FAILED')),
         ]
-        for a in res:
-            self.assertEqual(a[1], True, msg=a[0])
+        for text, expected, got in res:
+            self.assertEqual(expected, got, msg='%s: expected %s, got %s' % (text, expected, got))
+        self.assertGreater(task_runs[1].start_time,
+                           task_runs[0].start_time + datetime.timedelta(seconds=info.period),
+                           msg="period not is respected")
 
         # failed consecutive - checks
         info = s.task_status(failed_consecutive.id)
         task_runs = self.db(self.db.scheduler_run.task_id == info.id).select()
         res = [
-            ("task status completed", info.status == 'COMPLETED'),
-            ("task times_run is 2", info.times_run == 2),
-            ("task times_failed is 0", info.times_failed == 0),
-            ("task ran 6 times", len(task_runs) == 6),
-            ("scheduler_run records for COMPLETED is 2", len([run.status for run in task_runs if run.status == 'COMPLETED']) == 2),
-            ("scheduler_run records for FAILED is 4", len([run.status for run in task_runs if run.status == 'FAILED']) == 4),
+            ("task status", 'COMPLETED', info.status),
+            ("task times_run", 2, info.times_run),
+            ("task times_failed", 0, info.times_failed),
+            ("task ran times", 6, len(task_runs)),
+            ("scheduler_run records for COMPLETED", 2, sum(1 for run in task_runs if run.status == 'COMPLETED')),
+            ("scheduler_run records for FAILED", 4, sum(1 for run in task_runs if run.status == 'FAILED')),
         ]
-        for a in res:
-            self.assertEqual(a[1], True, msg=a[0])
+        for text, expected, got in res:
+            self.assertEqual(expected, got, msg='%s: expected %s, got %s' % (text, expected, got))
 
 if __name__ == '__main__':
     unittest.main()
